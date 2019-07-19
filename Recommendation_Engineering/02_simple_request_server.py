@@ -66,6 +66,7 @@ def load_topic_log(filename='../tmp/engineer/category_items.log', show_log=False
         items = ls[1].split("&&")
         for v in items:
             category_items[ls[0]].append(v)
+    file.close()
     if show_log:
         print("Loaded the topic log files: ")
         for k, v in category_items.items():
