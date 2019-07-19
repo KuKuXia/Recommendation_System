@@ -37,7 +37,10 @@ def get_user_info(click_actions, uid):
     else:
         return "Can't find the user info."
 
-comment_log = {} # key: uid value: video_ids 
+
+comment_log = {}  # key: uid value: video_ids
+category_items = {}  # key: item topic, value: item_ids
+
 
 def log_process(request):
     request = request.strip()
@@ -49,18 +52,54 @@ def log_process(request):
     for k, v in comment_log.items():
         print(k + "\t" + "&&".join(v))
     return " "
- 
-    
-    
-    
+
+
+def load_topic_log(filename='../tmp/engineer/category_items.log', show_log=False):
+    file = open(filename)
+    for line in file.readlines():
+        line = line.strip()
+        if not line:
+            continue
+        ls = line.split("\t")
+        if ls[0] not in category_items.keys():
+            category_items[ls[0]] = []
+        items = ls[1].split("&&")
+        for v in items:
+            category_items[ls[0]].append(v)
+    if show_log:
+        print("Loaded the topic log files: ")
+        for k, v in category_items.items():
+            print(k + "\t" + "&&".join(v) + "\r\n")
+    return category_items
+
+
+def process_topic_log(request, tag):
+    """
+    通类目推荐
+    tag = 1 文字 返回与文字匹配的商品
+    tag = 2 数字 返回与该数字同类目的商品
+    """
+    if tag == 1:
+        if request in category_items.keys():
+            return "&&".join(category_items[request])
+        else:
+            return "wrong name request."
+    elif tag == 2:
+        for k, v in category_items.items():
+            if request in v:
+                return "&&".join(v)
+        return "wrong number request."
+    else:
+        return "wrong tag."
 
 
 r = Rec()
+load_topic_log()
 
 while True:
 
     client_connection, client_address = listen_socket.accept()
-    request = client_connection.recv(1024)
+    request = client_connection.recv(1024).decode().strip().split("EOF")[0]
     # uid = processing(request)
 
     # print("***")
@@ -71,9 +110,14 @@ while True:
     Content-Type: text/html
 
     '''
+
     # http_response = get_user_info(click_actions, uid)
-    http_response = log_process(request.decode())
-    print("The user info are: ", http_response)
+    # http_response = log_process(request.decode())
+
+    # 同类目推荐
+    parameter, tag = request.split("&&")
+    http_response = process_topic_log(parameter, int(tag))
+    print("Get request from ", client_address)
     client_connection.send(
         (HttpResponseHeader + http_response).encode(encoding='utf-8'))
 
