@@ -88,7 +88,8 @@ def process_topic_log(request, tag):
     elif tag == 2:
         for k, v in category_items.items():
             if request in v:
-                return "&&".join(v)
+                # 人工干预推荐结果
+                return request + "#special#" + "&&".join(v)
         return "wrong number request."
     else:
         return "wrong tag."

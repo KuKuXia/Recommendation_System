@@ -15,8 +15,8 @@ try:
     # message = b'key=kukuxia This is the message.  It will be repeated.'
     # message = '9W63tc&jam& Linux Chrome Safari & 192.168.89.177 &693324 & 苹果发布会 & 0 & 2'
     # message = "空气净化器"
-    # message = "9648310&&2"
-    message = "加湿器&&1"
+    message = "4236180&&2"
+    # message = "加湿器&&1"
     print('sending {!r}'.format(message))
     sock.sendall(message.encode(encoding='utf-8'))
     sock.send(b'EOF')
