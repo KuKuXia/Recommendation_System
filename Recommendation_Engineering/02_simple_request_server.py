@@ -1,8 +1,9 @@
 import socket
-
 import time
 
-HOST, PORT = "", 9998
+from utils import processing_log_files
+
+HOST, PORT = 'localhost', 9999
 
 listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -10,11 +11,12 @@ listen_socket.bind((HOST, PORT))
 listen_socket.listen(1)
 print("Serving HTTP on port %s ..." % PORT)
 
+# get the click actions records
+click_actions = processing_log_files()
 
 def processing(request):
     uid = request.decode().split("key=")[1].split(" ")[0]
     return uid
-
 
 class Rec:
     def process(self, request):
@@ -23,9 +25,14 @@ class Rec:
         return self.rec(uid)
 
     def rec(self, uid):
-        rec = "1231, 123123, 21312"
+        rec = "Get request from uid: " + uid
         return rec
 
+def get_user_info(click_actions, uid):
+    if uid in click_actions.keys():
+        return "&&".join(click_actions[uid])
+    else:
+        return "Can't find the user info."
 
 r = Rec()
 
@@ -33,13 +40,19 @@ while True:
 
     client_connection, client_address = listen_socket.accept()
     request = client_connection.recv(1024)
+    uid = processing(request)
+
     print("***")
-    print(processing(request))
     print(r.process(request))
     print("***")
 
-    http_response = b"Hello world!"
+    HttpResponseHeader = '''HTTP/1.1 200 OK
+    Content-Type: text/html
 
-    print(http_response)
-    client_connection.send(http_response)
+    '''
+    http_response = get_user_info(click_actions, uid)
+    print("The user info are: ", http_response)
+    client_connection.send(
+        (HttpResponseHeader + http_response).encode(encoding='utf-8'))
+
     client_connection.close()
