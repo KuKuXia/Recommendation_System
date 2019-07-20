@@ -46,11 +46,11 @@ def read():
             for k, v in category_items.items():
                 line = k + "\t" + "&&".join(v[:10]) + "\r\n"
                 print(line)
-            print("read succeed")
+            print("read succeed.")
             global_lock = 0
         else:
             sleep(1)
-            print("read failed")
+            print("read failed.")
 
 
 def write():
@@ -60,12 +60,13 @@ def write():
         sleep(3)
         if global_lock == 0:
             global_lock = 1
-            print("writing data")
+            print("writing data.")
             sleep(4)
             global_lock = 0
+            print("writing succeed.")
         else:
             sleep(2)
-            print("writing failed")
+            print("writing failed.")
 
 
 threads = []

@@ -1,5 +1,7 @@
+import operator
 import socket
 import time
+import redis
 
 from utils import processing_log_files
 
@@ -95,8 +97,71 @@ def process_topic_log(request, tag):
         return "wrong tag."
 
 
+# 中文分词保存索引之后的推荐
+class CutIndex():
+    def __init__(self):
+        self.cut = {}
+
+        file = open('../tmp/engineer/word_cut.log')
+        for line in file.readlines():
+            ls = line.strip().split('\t')
+            if ls[0] + "#" + ls[1] not in self.cut.keys():
+                self.cut[ls[0] + "#" + ls[1]] = int(ls[2])
+        # for k, v in self.cut.items():
+        #     print(k + "\t" + str(v))
+
+    def read(self, key):
+        print(key)
+        result = {}
+        for k, v in self.cut.items():
+            if "filename : ../tmp/engineer/document_1.txt" + "#" + key == k:
+                result.setdefault(
+                    "filename : ../tmp/engineer/document_1.txt", v)
+            elif "filename : ../tmp/engineer/document_2.txt" + "#" + key == k:
+                result.setdefault(
+                    "filename : ../tmp/engineer/document_2.txt", v)
+            elif "filename : ../tmp/engineer/document_3.txt" + "#" + key == k:
+                result.setdefault(
+                    "filename : ../tmp/engineer/document_3.txt", v)
+
+        print("Search Result: ")
+        for k, v in result.items():
+            print(k + "\t" + str(v))
+
+        if not result.keys():
+            return "No result."
+        else:
+            sorted_result = sorted(
+                result.items(), key=operator.itemgetter(1), reverse=True)
+            print("Sorted search result:")
+            for k, v in sorted_result:
+                print(k + "\t" + str(v))
+            return sorted_result[0][0]
+
+
+# 实时推荐
+class RealTimeRanking():
+    def __init__(self):
+        self.old = [1, 2, 3, 4, 5]
+        self.new = [5, 4, 3, 2, 1]
+        self.rank_data = redis.Redis(host="127.0.0.1", port=6381)
+
+    def p(self, key):
+        m = self.rank_data.get("9527#1")
+        if m != None:
+            return ",".join(map(str, self.new))
+        else:
+            return ",".join(map(str, self.old))
+
+
 r = Rec()
 load_topic_log()
+
+# 读取中文分词之后的索引
+cut_index = CutIndex()
+
+# 实时推荐
+rtr = RealTimeRanking()
 
 while True:
 
@@ -117,8 +182,14 @@ while True:
     # http_response = log_process(request.decode())
 
     # 同类目推荐
-    parameter, tag = request.split("&&")
-    http_response = process_topic_log(parameter, int(tag))
+    # parameter, tag = request.split("&&")
+    # http_response = process_topic_log(parameter, int(tag))
+
+    # 中文分词推荐
+    # http_response = cut_index.read(request.split('&&')[0])
+
+    # 实时推荐
+    http_response = rtr.p(request.split('&&')[0])
     print("Get request from ", client_address)
     client_connection.send(
         (HttpResponseHeader + http_response).encode(encoding='utf-8'))
